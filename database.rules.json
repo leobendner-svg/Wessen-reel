@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "games": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && $code.matches(/^[A-Z]{4}$/)"
+      }
+    }
+  }
+}

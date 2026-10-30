@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wessen Reel?</title>
+<meta name="description" content="Partyspiel: Jeder legt heimlich Reels rein, ihr ratet, von wem welches ist.">
+<meta name="theme-color" content="#E8355A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F3F1F7; --surface:#FFFFFF; --fg:#17141F; --muted:#6B6578; --line:#DED9E8;
+  --accent:#E8355A; --accent-fg:#FFFFFF; --ok:#1F9D63; --bad:#C93A3A; --star:#E8A21B;
+  --display:"Unbounded", "Arial Black", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#121019; --surface:#1D1A27; --fg:#F2EFF8; --muted:#A49DB3; --line:#2E2A3B;
+  --accent:#FF5C7C; --accent-fg:#1A0810; --ok:#3CC985; --bad:#FF6B6B; --star:#F5B83D; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:max(20px,env(safe-area-inset-top,0px));padding-bottom:max(40px,env(safe-area-inset-bottom,0px))}
+main{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+#top,#ui{display:flex;flex-direction:column;gap:18px}
+#top:empty,#stage:empty{display:none}
+h1{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.05;margin:0;letter-spacing:-.01em}
+h1 span{color:var(--accent)}
+h1.mini{font-size:1.15rem}
+h2{font-family:var(--display);font-weight:600;font-size:1.1rem;margin:0}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.between{justify-content:space-between}
+.row > input{flex:1 1 160px;min-width:0}
+input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button,.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;background:var(--fg);color:var(--bg);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
+button.primary,.btn.primary{background:var(--accent);color:var(--accent-fg)}
+button.ghost,.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+button.small,.btn.small{padding:7px 12px;font-size:.875rem}
+button:disabled{opacity:.4;cursor:not-allowed}
+.wide{width:100%}
+.code{font-family:var(--display);font-weight:800;font-size:1.6rem;letter-spacing:.18em}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.plain li{display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0}
+ul.plain li .url{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.chip{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.bad{color:var(--bad);border-color:var(--bad)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--ok)}
+.counter{font-family:var(--display);font-weight:600;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.guess-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.guess-grid button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+.guess-grid button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.stars{display:flex;gap:4px}
+.stars button{background:none;color:var(--line);font-size:2rem;padding:0 4px;line-height:1}
+.stars button.on{color:var(--star)}
+.reveal{font-family:var(--display);font-weight:800;font-size:1.5rem;color:var(--accent)}
+.score{display:grid;grid-template-columns:1fr auto auto;gap:6px 14px;align-items:center;font-variant-numeric:tabular-nums}
+.score .h{font-size:.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.notice{border-left:3px solid var(--accent);padding:8px 12px;background:var(--surface);border-radius:0 10px 10px 0;font-size:.9rem}
+.err{color:var(--bad);font-size:.875rem;min-height:1.2em}
+.err:empty{display:none}
+#stage{display:flex;flex-direction:column;gap:8px;align-items:center}
+.embed{width:100%;display:flex;justify-content:center}
+.embed iframe{border:0;border-radius:14px;display:block;background:#000;max-width:100%}
+.embed.tiktok iframe,.embed.youtube iframe{height:min(72vh,640px);aspect-ratio:9/16;width:auto}
+.embed.instagram iframe{width:100%;height:min(68vh,640px);background:#fff}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .35s ease-out}@keyframes pop{from{transform:scale(.92);opacity:.4}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<main>
+  <div id="top"></div>
+  <div id="stage"></div>
+  <div id="ui">
+    <header><p class="label">Partyspiel für 2–8 Leute</p><h1>Wessen <span>Reel?</span></h1></header>
+    <div class="card"><p>Lade …</p></div>
+  </div>
+</main>
+
+<script type="module">
+import { FIREBASE_CONFIG } from './firebase-config.js';
+
+const $top = document.getElementById('top'), $stage = document.getElementById('stage'), $ui = document.getElementById('ui');
+const LS = {
+  get(k){ try{ return localStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v) }catch(e){} }
+};
+const MAX_SUBS = 5, MAX_PLAYERS = 8;
+const params = new URLSearchParams(location.search);
+const EMU = params.get('emu') === '1';
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a };
+const newCode = () => Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random()*24)]).join('');
+const fmt = x => x.toFixed(1).replace('.',',');
+const header = (mini) => `<header><p class="label">Partyspiel für 2–8 Leute</p><h1 class="${mini?'mini':''}">Wessen <span>Reel?</span></h1></header>`;
+
+/* ================= Links erkennen und einbetten ================= */
+const KIND_NAME = {instagram:'Instagram', tiktok:'TikTok', youtube:'YouTube', link:'Browser'};
+async function parseLink(text){
+  const m = String(text||'').match(/https?:\/\/[^\s<>"']+/i);
+  if(!m) return null;
+  const url = m[0].replace(/[),.;!?]+$/,'');
+  let host; try{ host = new URL(url).hostname.replace(/^www\.|^m\./,'') }catch(e){ return null }
+  if(/(^|\.)instagram\.com$/.test(host)){
+    const ig = url.match(/instagram\.com\/(?:(?!share\/)[A-Za-z0-9_.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
+    return {url, kind:'instagram', embed: ig ? `https://www.instagram.com/p/${ig[1]}/embed/` : null};
+  }
+  if(/(^|\.)tiktok\.com$/.test(host)){
+    let id = (url.match(/\/video\/(\d+)/)||[])[1];
+    if(!id){
+      try{
+        const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 6000);
+        const r = await fetch('https://www.tiktok.com/oembed?url='+encodeURIComponent(url), {signal:ctl.signal});
+        clearTimeout(t);
+        if(r.ok){ const j = await r.json(); id = j.embed_product_id || ((j.html||'').match(/player\/v1\/(\d+)|data-video-id="(\d+)"/)||[]).slice(1).find(Boolean) }
+      }catch(e){}
+    }
+    return {url, kind:'tiktok', embed: id ? `https://www.tiktok.com/player/v1/${id}?music_info=1&description=0&rel=0` : null};
+  }
+  if(/(^|\.)(youtube\.com|youtu\.be)$/.test(host)){
+    const yt = url.match(/(?:shorts\/|youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{6,})/);
+    return {url, kind:'youtube', embed: yt ? `https://www.youtube.com/embed/${yt[1]}?playsinline=1` : null};
+  }
+  return {url, kind:'link', embed:null};
+}
+function kindLabel(s){ return KIND_NAME[s.kind] || 'Link' }
+
+/* Der Player liegt in einem eigenen Bereich, damit das Video nicht neu startet,
+   wenn sich woanders etwas ändert (z. B. jemand gibt einen Tipp ab). */
+let stageKey = null;
+function setStage(sub){
+  const key = sub ? sub.id : null;
+  if(key === stageKey) return;
+  stageKey = key;
+  if(!sub){ $stage.innerHTML=''; return }
+  const open = `<a class="btn ${sub.embed?'ghost small':'primary wide'}" href="${esc(sub.url)}" target="_blank" rel="noopener noreferrer">In ${kindLabel(sub)} öffnen ↗</a>`;
+  $stage.innerHTML = sub.embed
+    ? `<div class="embed ${esc(sub.kind)}"><iframe src="${esc(sub.embed)}" title="Reel" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+       <p class="muted small" style="text-align:center">Läuft nicht? ${open}</p>`
+    : `<div class="card" style="width:100%">${open}<p class="muted small">Dieser Link lässt sich nicht einbetten. Öffnen, anschauen, hierher zurückkommen.</p></div>`;
+}
+
+async function readClipboard(){
+  try{ return await navigator.clipboard.readText() }catch(e){ return '' }
+}
+const canPaste = !!(navigator.clipboard && navigator.clipboard.readText);
+
+/* ================= Online (Firebase) ================= */
+let F = null, me = null, online = 'off';   // off | wait | ready | error | unconfigured
+let code = null, game = null, unsubs = [], presenceFor = null, loadTimer = null, loadFailed = false;
+let draft = {guess:null, stars:0}, errMsg = '', busy = false;
+
+const configured = !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && !/EINFUEGEN/.test(FIREBASE_CONFIG.apiKey) && FIREBASE_CONFIG.databaseURL);
+
+async function initFirebase(){
+  const V = '10.12.2', base = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [appM, dbM, auM] = await Promise.all([import(base+'firebase-app.js'), import(base+'firebase-database.js'), import(base+'firebase-auth.js')]);
+  const cfg = EMU ? {apiKey:'demo-key', projectId:'demo-wessen', databaseURL:'http://127.0.0.1:9000/?ns=demo-wessen'} : FIREBASE_CONFIG;
+  const app = appM.initializeApp(cfg);
+  const auth = auM.getAuth(app), db = dbM.getDatabase(app);
+  if(EMU){ auM.connectAuthEmulator(auth, 'http://127.0.0.1:9099', {disableWarnings:true}); dbM.connectDatabaseEmulator(db, '127.0.0.1', 9000) }
+  const cred = await auM.signInAnonymously(auth);
+  me = cred.user.uid;
+  F = {...dbM, db};
+}
+const R = p => F.ref(F.db, p);
+const G = (...s) => ['games', code, ...s].join('/');
+
+const players = () => Object.entries(game?.players||{}).map(([id,v])=>({id,...v})).filter(p=>p.name).sort((a,b)=>(a.joined||0)-(b.joined||0));
+const subsList = () => Object.entries(game?.subs||{}).map(([id,v])=>({id,...v}));
+const guessList = () => Object.values(game?.guesses||{});
+const orderList = () => Array.isArray(game?.order) ? game.order : Object.values(game?.order||{});
+const nameOf = id => (game?.players?.[id]||{}).name || 'Jemand';
+
+function fail(e){
+  console.error(e);
+  const c = e && (e.code||'');
+  errMsg = /permission/i.test(c+' '+(e&&e.message)) ? 'Keine Berechtigung. Sind die Datenbank-Regeln eingetragen?' : 'Das hat nicht geklappt. Prüf dein Netz und versuch es nochmal.';
+  render();
+}
+async function act(fn){ if(busy) return; busy=true; errMsg=''; try{ await fn() }catch(e){ fail(e) } finally{ busy=false } }
+
+function stopListening(){ unsubs.forEach(u=>{ try{u()}catch(e){} }); unsubs=[]; presenceFor=null; clearTimeout(loadTimer) }
+async function leave(kicked){
+  if(F && code){
+    const pr = R(G('players', me, 'online'));
+    try{ await F.onDisconnect(pr).cancel(); if(!kicked && game?.players?.[me]) await F.set(pr, false) }catch(e){}
+  }
+  stopListening(); code=null; game=null; loadFailed=false; LS.set('wr_code', null); render();
+}
+function enter(c){
+  stopListening();
+  code=c; game=null; loadFailed=false; LS.set('wr_code', c);
+  loadTimer = setTimeout(()=>{ if(!game){ loadFailed=true; render() } }, 10000);
+  unsubs.push(F.onValue(R('games/'+c), s => {
+    const v = s.val();
+    if(!v || !v.host){ errMsg='Dieses Spiel gibt es nicht mehr.'; return leave(true) }
+    if(!v.players || !v.players[me] || !v.players[me].name){ errMsg='Du bist nicht mehr in diesem Spiel.'; return leave(true) }
+    clearTimeout(loadTimer); loadFailed=false;
+    const prev = game; game = v;
+    if(!prev || prev.idx!==v.idx || prev.phase!==v.phase) draft={guess:null,stars:0};
+    if(presenceFor!==c) setupPresence(c);
+    render();
+  }, e => { errMsg='Kein Zugriff auf das Spiel.'; fail(e); leave() }));
+}
+function setupPresence(c){
+  presenceFor = c;
+  unsubs.push(F.onValue(R('.info/connected'), s => {
+    if(s.val()!==true || code!==c) return;
+    const pr = R(`games/${c}/players/${me}/online`);
+    F.onDisconnect(pr).set(false).then(()=>F.set(pr, true)).catch(()=>{});
+  }));
+}
+
+async function createGame(name){
+  let c;
+  for(let i=0;i<8;i++){ c=newCode(); const s=await F.get(R(`games/${c}/host`)); if(!s.exists()) break; c=null }
+  if(!c) throw new Error('kein freier Code');
+  await F.set(R('games/'+c), {host:me, phase:'submit', idx:0, show:false, created:Date.now(),
+    players:{[me]:{name, joined:Date.now(), online:true}}});
+  enter(c);
+}
+async function joinGame(c, name){
+  const s = await F.get(R(`games/${c}`));
+  if(!s.exists() || !s.val().host){ errMsg='Kein Spiel mit diesem Code gefunden.'; return render() }
+  const v = s.val(), ps = v.players||{};
+  if(!ps[me]?.name && Object.values(ps).filter(p=>p.name).length>=MAX_PLAYERS){ errMsg='Das Spiel ist voll (max. 8).'; return render() }
+  await F.update(R(`games/${c}/players/${me}`), {name, online:true, joined: ps[me]?.joined || Date.now()});
+  enter(c);
+}
+
+function shareLink(){ return location.origin + location.pathname + '?g=' + code }
+async function invite(btn){
+  const url = shareLink();
+  try{
+    if(navigator.share){ await navigator.share({title:'Wessen Reel?', text:`Spiel mit! Code ${code}`, url}); return }
+    await navigator.clipboard.writeText(url); btn.textContent='Link kopiert ✓';
+  }catch(e){ if(e && e.name!=='AbortError'){ btn.textContent = url } }
+}
+
+function hostBar(){
+  // Wenn die Spielleitung weg ist, kann jemand anderes übernehmen.
+  const h = game.players?.[game.host];
+  if(game.host===me || (h && h.online!==false)) return '';
+  return `<div class="notice row between"><span>${esc(nameOf(game.host))} ist offline.</span><button class="small" id="takeover">Leitung übernehmen</button></div>`;
+}
+function bindHostBar(){
+  const t=document.getElementById('takeover');
+  if(t) t.onclick = () => act(()=>F.update(R('games/'+code), {host:me}));
+}
+
+/* ---------- Start ---------- */
+function renderStart(){
+  setStage(null); $top.innerHTML='';
+  const n = LS.get('wr_name') || '';
+  const pre = (params.get('g')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+  let onlinePart = '';
+  if(online==='ready'){
+    onlinePart = `
+    <div class="card">
+      <span class="label">Jeder am eigenen Handy</span>
+      <label class="label" for="nm">Dein Spitzname</label>
+      <input id="nm" maxlength="16" placeholder="z. B. Leo" value="${esc(n)}" autocomplete="nickname">
+      <div class="row"><input id="jc" maxlength="4" placeholder="CODE" value="${esc(pre)}" style="text-transform:uppercase;letter-spacing:.2em" autocomplete="off" autocapitalize="characters"><button id="join" class="${pre?'primary':''}">Beitreten</button></div>
+      ${pre?'':`<p class="muted small" style="text-align:center">oder</p><button class="primary wide" id="create">Neues Spiel eröffnen</button>`}
+    </div>
+    <p class="err">${esc(errMsg)}</p>
+    <details class="small muted"><summary>So läuft's</summary>
+      <ol style="padding-left:18px;margin:8px 0 0">
+        <li>Einer eröffnet und schickt den Einladungslink in die Gruppe.</li>
+        <li>Jeder fügt heimlich bis zu ${MAX_SUBS} Links ein (Instagram oder TikTok: Teilen › Link kopieren).</li>
+        <li>Die Reels laufen gemischt nacheinander. Jeder tippt am eigenen Handy, von wem es ist, und vergibt Sterne.</li>
+        <li>Die Spielleitung löst auf. Am Ende: Punkte fürs richtige Raten und bester Geschmack.</li>
+      </ol>
+    </details>`;
+  } else if(online==='wait'){
+    onlinePart = `<p class="muted small">Verbinde mit dem Spielserver …</p>`;
+  } else if(online==='unconfigured'){
+    onlinePart = `<p class="notice">Online-Modus ist noch nicht eingerichtet: In <code>firebase-config.js</code> fehlen die Firebase-Daten (Anleitung in der README).</p>`;
+  } else if(online==='error'){
+    onlinePart = `<p class="notice">Spielserver nicht erreichbar. Prüf dein Netz und lade die Seite neu.</p><button class="ghost wide" onclick="location.reload()">Neu laden</button>`;
+  }
+  $ui.innerHTML = header() + onlinePart + `
+  <div class="card">
+    <span class="label">Alternative</span>
+    <h2>Ein Handy für alle</h2>
+    <p class="muted small">Das Handy geht reihum: Jeder tippt verdeckt seine Reels ein und gibt verdeckt seinen Tipp ab.</p>
+    <button class="ghost wide" id="local">Ein-Handy-Spiel starten</button>
+    ${L && L.step!=='setup' ? `<button class="ghost wide" id="resume">Letztes Ein-Handy-Spiel fortsetzen</button>`:''}
+  </div>`;
+  bindLocalStart();
+  if(online!=='ready') return;
+  const nm = document.getElementById('nm'), jc = document.getElementById('jc');
+  if(pre && !n) nm.focus();
+  const getName = () => { const v=nm.value.trim(); if(!v){ errMsg='Gib erst einen Spitznamen ein.'; render(); return null } LS.set('wr_name',v); return v };
+  const cr = document.getElementById('create');
+  if(cr) cr.onclick = () => act(async () => { const name=getName(); if(name) await createGame(name) });
+  const doJoin = () => act(async () => {
+    const name=getName(); if(!name) return;
+    const c=jc.value.trim().toUpperCase();
+    if(!/^[A-Z]{4}$/.test(c)){ errMsg='Der Code hat 4 Buchstaben.'; return render() }
+    await joinGame(c, name);
+  });
+  document.getElementById('join').onclick = doJoin;
+  jc.onkeydown = e => { if(e.key==='Enter') doJoin() };
+}
+
+/* ---------- Reels sammeln ---------- */
+function renderSubmit(){
+  setStage(null); $top.innerHTML='';
+  const isHost = game.host===me, ps = players(), subs = subsList();
+  const mine = subs.filter(s=>s.owner===me);
+  const ready = ps.filter(p=>subs.some(s=>s.owner===p.id));
+  $ui.innerHTML = header(true) + hostBar() + `
+  <div class="card">
+    <div class="row between"><span class="label">Spielcode</span><button class="ghost small" id="leave">Verlassen</button></div>
+    <span class="code">${esc(code)}</span>
+    <button class="primary wide" id="invite">Freunde einladen</button>
+  </div>
+  <div class="card">
+    <h2>Deine Reels <span class="counter">${mine.length}/${MAX_SUBS}</span></h2>
+    <p class="muted small">Instagram oder TikTok: Teilen › Link kopieren, hier einfügen. Die App zeigt niemandem, welche Reels von dir sind.</p>
+    ${mine.length ? `<ul class="plain">${mine.map(s=>`<li><span class="url small">${esc(kindLabel(s))} · ${esc(s.url)}</span><button class="ghost small" data-del="${esc(s.id)}">Entfernen</button></li>`).join('')}</ul>`:''}
+    ${mine.length<MAX_SUBS ? `<div class="row"><input id="url" inputmode="url" placeholder="Link einfügen" autocomplete="off"><button class="primary" id="add">Rein</button></div>
+      ${canPaste?`<button class="ghost small" id="paste">Aus Zwischenablage einfügen</button>`:''}`:''}
+  </div>
+  <div class="card">
+    <h2>Mitspieler <span class="counter">${ps.length}/${MAX_PLAYERS}</span></h2>
+    <ul class="plain">${ps.map(p=>{const n=subs.filter(s=>s.owner===p.id).length;return `<li><span><i class="dot ${p.online!==false?'on':''}"></i>${esc(p.name)}${p.id===me?' <span class="muted small">(du)</span>':''}${p.id===game.host?' <span class="chip">Leitung</span>':''}</span><span class="row"><span class="chip ${n?'ok':''}">${n} Reels</span>${isHost&&p.id!==me?`<button class="ghost small" data-kick="${esc(p.id)}" aria-label="${esc(p.name)} entfernen">✕</button>`:''}</span></li>`}).join('')}</ul>
+  </div>
+  <p class="err">${esc(errMsg)}</p>
+  ${isHost ? `<button class="primary wide" id="start" ${ready.length<2?'disabled':''}>Los geht's (${subs.length} Reels)</button>
+     ${ready.length<2?'<p class="muted small" style="text-align:center">Mindestens zwei Spieler brauchen ein Reel.</p>':''}`
+   : `<p class="muted small" style="text-align:center">Warte, bis ${esc(nameOf(game.host))} das Spiel startet.</p>`}`;
+  bindHostBar();
+  document.getElementById('leave').onclick = () => leave();
+  document.getElementById('invite').onclick = e => invite(e.currentTarget);
+  const addFrom = text => act(async () => {
+    if(subsList().filter(s=>s.owner===me).length>=MAX_SUBS) return;
+    const info = await parseLink(text);
+    if(!info){ errMsg='Das sieht nicht nach einem Link aus.'; return render() }
+    if(subsList().some(s=>s.owner===me && s.url===info.url)){ errMsg='Den Link hast du schon drin.'; return render() }
+    await F.push(R(G('subs')), {owner:me, ...info, added:Date.now()});
+    const el=document.getElementById('url'); if(el) el.value='';
+  });
+  const add=document.getElementById('add');
+  if(add){ add.onclick = () => addFrom(document.getElementById('url').value); document.getElementById('url').onkeydown = e => { if(e.key==='Enter') add.click() } }
+  const pa=document.getElementById('paste');
+  if(pa) pa.onclick = async () => { const t=await readClipboard(); if(t) addFrom(t); else { errMsg='Zwischenablage leer oder nicht erlaubt. Bitte manuell einfügen.'; render() } };
+  $ui.querySelectorAll('[data-del]').forEach(b => b.onclick = () => act(() => F.remove(R(G('subs', b.dataset.del)))));
+  $ui.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => act(async () => {
+    const id=b.dataset.kick, upd={[`players/${id}`]:null};
+    subsList().filter(s=>s.owner===id).forEach(s=>upd[`subs/${s.id}`]=null);
+    await F.update(R('games/'+code), upd);
+  }));
+  const st=document.getElementById('start');
+  if(st) st.onclick = () => act(() => F.update(R('games/'+code), {phase:'play', order:shuffle(subsList().map(s=>s.id)), idx:0, show:false, guesses:null}));
+}
+
+/* ---------- Spielen ---------- */
+function renderPlay(){
+  const order = orderList(), isHost = game.host===me;
+  const subId = order[game.idx];
+  const sub = subsList().find(s=>s.id===subId);
+  if(!sub){
+    setStage(null); $top.innerHTML='';
+    $ui.innerHTML = header(true) + hostBar() + `<div class="card"><p>Dieses Reel wurde entfernt.</p></div>` +
+      (isHost ? `<button class="primary wide" id="skip">Weiter</button>` : '');
+    bindHostBar();
+    const sk=document.getElementById('skip');
+    if(sk) sk.onclick = () => act(() => F.update(R('games/'+code), game.idx>=order.length-1 ? {phase:'end', show:false} : {idx:game.idx+1, show:false}));
+    return;
+  }
+  const ps = players();
+  const here = guessList().filter(g=>g.sub===subId);
+  const myG = here.find(g=>g.voter===me);
+  const voters = ps.filter(p=>p.id!==sub.owner);
+  const isMine = sub.owner===me;
+  const last = game.idx>=order.length-1;
+
+  $top.innerHTML = `<div class="row between"><h1 class="mini">Wessen <span>Reel?</span></h1><span class="counter">Reel ${game.idx+1} von ${order.length}</span></div>`;
+  setStage(sub);
+
+  let body='';
+  if(game.show){
+    const rated = here.filter(g=>g.voter!==sub.owner);
+    const avg = rated.length ? rated.reduce((a,g)=>a+(g.stars||0),0)/rated.length : 0;
+    body = `<div class="card pop">
+      <span class="label">Das Reel war von</span>
+      <p class="reveal">${esc(nameOf(sub.owner))}</p>
+      <p class="small muted">${rated.length? `${fmt(avg)} von 5 Sternen im Schnitt`:'Keine Tipps abgegeben'}</p>
+      <ul class="plain">${rated.map(g=>`<li><span>${esc(nameOf(g.voter))} tippte ${esc(nameOf(g.guess))}</span><span class="chip ${g.guess===sub.owner?'ok':'bad'}">${g.guess===sub.owner?'richtig':'falsch'}</span></li>`).join('')}</ul>
+    </div>`;
+  } else if(isMine){
+    body = `<div class="card"><h2>Das ist deins.</h2><p class="muted">Pokerface. Die anderen raten gerade.</p></div>`;
+  } else {
+    const g = draft.guess || myG?.guess || null;
+    const st = draft.stars || myG?.stars || 0;
+    const changed = !myG || g!==myG.guess || st!==myG.stars;
+    body = `<div class="card">
+      <h2>Von wem ist das?</h2>
+      <div class="guess-grid">${ps.filter(p=>p.id!==me).map(p=>`<button aria-pressed="${g===p.id}" data-g="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>
+      <span class="label">Wie gut ist das Reel?</span>
+      <div class="stars" role="group" aria-label="Sterne">${[1,2,3,4,5].map(i=>`<button class="${i<=st?'on':''}" data-s="${i}" aria-label="${i} Sterne">★</button>`).join('')}</div>
+      <button class="primary wide" id="send" ${g&&st&&changed?'':'disabled'}>${myG ? (changed?'Tipp ändern':'Tipp abgegeben ✓') : 'Tipp abgeben'}</button>
+    </div>`;
+  }
+  $ui.innerHTML = hostBar() + body + `
+  <div class="card">
+    <span class="label">Tipps abgegeben</span>
+    <div class="row">${voters.map(p=>`<span class="chip ${here.some(g=>g.voter===p.id)?'ok':''}">${esc(p.name)}</span>`).join('')}</div>
+  </div>
+  <p class="err">${esc(errMsg)}</p>
+  ${isHost ? (game.show
+      ? `<button class="primary wide" id="next">${last?'Zum Ergebnis':'Nächstes Reel'}</button>`
+      : `<button class="wide" id="show">Auflösen (${here.filter(g=>g.voter!==sub.owner).length}/${voters.length})</button>`) : ''}
+  <button class="ghost small" id="leave" style="align-self:center">Spiel verlassen</button>`;
+  bindHostBar();
+  document.getElementById('leave').onclick = () => leave();
+  $ui.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { draft.guess=b.dataset.g; render() });
+  $ui.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { draft.stars=+b.dataset.s; render() });
+  const send=document.getElementById('send');
+  if(send) send.onclick = () => act(async () => {
+    const g = draft.guess || myG?.guess, s = draft.stars || myG?.stars;
+    await F.set(R(G('guesses', subId+'_'+me)), {sub:subId, voter:me, guess:g, stars:s, at:Date.now()});
+    draft={guess:null,stars:0}; render();
+  });
+  const sh=document.getElementById('show'); if(sh) sh.onclick = () => act(() => F.update(R('games/'+code), {show:true}));
+  const nx=document.getElementById('next'); if(nx) nx.onclick = () => act(() => F.update(R('games/'+code), last?{phase:'end',show:false}:{idx:game.idx+1, show:false}));
+}
+
+/* ---------- Ergebnis ---------- */
+function scoreBoard(ps, votes, order, ownerOf, nameFn){
+  // votes: [{sid, voter, guess, stars}] ohne Stimmen für das eigene Reel
+  const rows = ps.map(p => {
+    const right = votes.filter(v=>v.voter===p.id && v.guess===ownerOf(v.sid)).length;
+    const possible = order.filter(id=>ownerOf(id) && ownerOf(id)!==p.id).length;
+    const got = votes.filter(v=>ownerOf(v.sid)===p.id);
+    const avg = got.length ? got.reduce((a,v)=>a+(v.stars||0),0)/got.length : 0;
+    return {p, right, possible, avg, n:got.length};
+  }).sort((a,b)=>b.right-a.right || b.avg-a.avg);
+  const reels = order.map(id => { const h=votes.filter(v=>v.sid===id); return {id, n:h.length, avg:h.length? h.reduce((a,v)=>a+(v.stars||0),0)/h.length : 0} }).filter(r=>r.n).sort((a,b)=>b.avg-a.avg);
+  const taste = rows.filter(r=>r.n).slice().sort((a,b)=>b.avg-a.avg)[0];
+  const top = rows[0];
+  const tie = rows.filter(r=>top && r.right===top.right && r.avg===top.avg).length>1;
+  return {rows, best:reels[0], taste, html: `
+  <div class="card pop">
+    <span class="label">Bester Detektiv</span>
+    <p class="reveal">${top ? (tie ? rows.filter(r=>r.right===top.right&&r.avg===top.avg).map(r=>esc(r.p.name)).join(' & ') : esc(top.p.name)) : '–'}</p>
+    ${taste ? `<p class="small">Bester Geschmack: <b>${esc(taste.p.name)}</b> mit ${fmt(taste.avg)} Sternen im Schnitt</p>`:''}
+  </div>
+  <div class="card"><div class="score">
+    <span class="h">Spieler</span><span class="h">Richtig</span><span class="h">Sterne</span>
+    ${rows.map(r=>`<span>${esc(r.p.name)}</span><span>${r.right} / ${r.possible}</span><span>${r.n?fmt(r.avg):'–'}</span>`).join('')}
+  </div></div>`};
+}
+function bestReelCard(best, sub, ownerName){
+  if(!best || !sub) return '';
+  return `<div class="card"><span class="label">Bestes Reel · ${fmt(best.avg)} Sterne · von ${esc(ownerName)}</span><a class="btn wide" href="${esc(sub.url)}" target="_blank" rel="noopener noreferrer">Nochmal ansehen ↗</a></div>`;
+}
+function renderEnd(){
+  setStage(null); $top.innerHTML='';
+  const order = orderList(), subs = subsList();
+  const ownerOf = id => (subs.find(s=>s.id===id)||{}).owner;
+  const votes = guessList().filter(g=>order.includes(g.sub) && g.voter!==ownerOf(g.sub)).map(g=>({sid:g.sub, voter:g.voter, guess:g.guess, stars:g.stars}));
+  const sb = scoreBoard(players(), votes, order, ownerOf);
+  const bestSub = sb.best && subs.find(s=>s.id===sb.best.id);
+  $ui.innerHTML = header(true) + hostBar() + sb.html + bestReelCard(sb.best, bestSub, bestSub && nameOf(bestSub.owner)) + `
+  <p class="err">${esc(errMsg)}</p>
+  ${game.host===me ? `<button class="primary wide" id="again">Neue Runde, gleiche Leute</button>`:`<p class="muted small" style="text-align:center">${esc(nameOf(game.host))} kann eine neue Runde starten.</p>`}
+  <button class="ghost wide" id="leave">Spiel verlassen</button>`;
+  bindHostBar();
+  document.getElementById('leave').onclick = () => leave();
+  const ag=document.getElementById('again');
+  if(ag) ag.onclick = () => act(() => F.update(R('games/'+code), {phase:'submit', order:null, idx:0, show:false, subs:null, guesses:null}));
+}
+
+/* ================= Ein-Handy-Modus (ohne Spielserver) ================= */
+let L = null, mode = null, ldraft = {guess:null, stars:0};
+try{ L = JSON.parse(LS.get('wr_local') || 'null') }catch(e){ L = null }
+const saveL = () => LS.set('wr_local', L ? JSON.stringify(L) : null);
+const uid = () => Math.random().toString(36).slice(2,9);
+const lname = id => (L.players.find(p=>p.id===id)||{}).name || '?';
+function setL(fn){ fn(L); saveL(); render(); window.scrollTo(0,0) }
+
+function bindLocalStart(){
+  const b=document.getElementById('local');
+  if(b) b.onclick = () => { const n=LS.get('wr_name'); L={step:'setup', players: n?[{id:uid(),name:n}]:[], subs:[], order:[], idx:0, turn:0, covered:true, votes:{}}; saveL(); mode='local'; errMsg=''; render() };
+  const r=document.getElementById('resume');
+  if(r) r.onclick = () => { mode='local'; errMsg=''; render() };
+}
+function cover(name, what){
+  return `<div class="card pop" style="text-align:center;padding-block:40px">
+    <span class="label">Handy weitergeben an</span>
+    <p class="reveal" style="font-size:2rem">${esc(name)}</p>
+    <p class="muted small">${what}</p>
+    <button class="primary wide" id="iam">Ich bin ${esc(name)}</button>
+  </div>`;
+}
+function lTop(extra){
+  return `<div class="row between"><h1 class="mini">Wessen <span>Reel?</span></h1><button class="ghost small" id="quit">Beenden</button></div>${extra?`<span class="counter">${extra}</span>`:''}`;
+}
+function bindQuit(){
+  const q=document.getElementById('quit');
+  if(q) q.onclick = () => { if(q.dataset.sure){ L=null; saveL(); mode=null; render() } else { q.dataset.sure='1'; q.textContent='Wirklich beenden?' } };
+}
+
+function renderLocal(){
+  if(!L){ mode=null; return renderStart() }
+  const P=L.players;
+  let stage=null;
+  if(L.step==='setup'){
+    $top.innerHTML = lTop('Wer spielt mit?');
+    $ui.innerHTML = `
+    <div class="card">
+      <h2>Mitspieler <span class="counter">${P.length}</span></h2>
+      ${P.length?`<ul class="plain">${P.map(p=>`<li><span>${esc(p.name)}</span><button class="ghost small" data-rm="${p.id}">Entfernen</button></li>`).join('')}</ul>`:''}
+      <div class="row"><input id="pn" maxlength="16" placeholder="Name" autocomplete="off"><button id="padd">Hinzufügen</button></div>
+    </div>
+    <p class="err">${esc(errMsg)}</p>
+    <button class="primary wide" id="go" ${P.length<2?'disabled':''}>Weiter: Reels sammeln</button>`;
+    const add = () => { const v=document.getElementById('pn').value.trim(); if(!v) return; if(P.length>=MAX_PLAYERS){ errMsg='Maximal 8 Spieler.'; return render() } errMsg=''; setL(s=>s.players.push({id:uid(),name:v})); const el=document.getElementById('pn'); if(el){ el.value=''; el.focus() } };
+    document.getElementById('padd').onclick = add;
+    document.getElementById('pn').onkeydown = e => { if(e.key==='Enter') add() };
+    $ui.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>setL(s=>{s.players=s.players.filter(p=>p.id!==b.dataset.rm)}));
+    document.getElementById('go').onclick = () => setL(s=>{ s.step='submit'; s.turn=0; s.covered=true; s.subs=[] });
+  }
+  else if(L.step==='submit'){
+    const p=P[L.turn];
+    $top.innerHTML = lTop(`Reels sammeln · ${L.turn+1} von ${P.length}`);
+    if(L.covered){
+      $ui.innerHTML = cover(p.name, 'Nur du schaust jetzt aufs Handy und fügst deine Reels ein.');
+      document.getElementById('iam').onclick = () => setL(s=>{s.covered=false});
+    } else {
+      const mine=L.subs.filter(s=>s.owner===p.id);
+      $ui.innerHTML = `
+      <div class="card">
+        <h2>${esc(p.name)}, deine Reels <span class="counter">${mine.length}/${MAX_SUBS}</span></h2>
+        <p class="muted small">Instagram oder TikTok: Teilen › Link kopieren, hier einfügen.</p>
+        ${mine.length?`<ul class="plain">${mine.map(s=>`<li><span class="url small">${esc(kindLabel(s))} · ${esc(s.url)}</span><button class="ghost small" data-del="${s.id}">Entfernen</button></li>`).join('')}</ul>`:''}
+        ${mine.length<MAX_SUBS?`<div class="row"><input id="url" inputmode="url" placeholder="Link einfügen" autocomplete="off"><button class="primary" id="add">Rein</button></div>
+          ${canPaste?`<button class="ghost small" id="paste">Aus Zwischenablage einfügen</button>`:''}`:''}
+      </div>
+      <p class="err">${esc(errMsg)}</p>
+      <button class="wide" id="done" ${mine.length?'':'disabled'}>Fertig – Bildschirm verdecken</button>`;
+      const addFrom = async text => {
+        const info = await parseLink(text);
+        if(!info){ errMsg='Das sieht nicht nach einem Link aus.'; return render() }
+        errMsg=''; setL(s=>s.subs.push({id:uid(), owner:p.id, ...info}));
+      };
+      const add=document.getElementById('add');
+      if(add){ add.onclick = () => addFrom(document.getElementById('url').value); document.getElementById('url').onkeydown = e => { if(e.key==='Enter') add.click() } }
+      const pa=document.getElementById('paste');
+      if(pa) pa.onclick = async () => { const t=await readClipboard(); if(t) addFrom(t); else { errMsg='Zwischenablage leer oder nicht erlaubt. Bitte manuell einfügen.'; render() } };
+      $ui.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>setL(s=>{s.subs=s.subs.filter(x=>x.id!==b.dataset.del)}));
+      document.getElementById('done').onclick = () => {
+        errMsg='';
+        if(L.turn < P.length-1) setL(s=>{ s.turn++; s.covered=true });
+        else setL(s => { s.order = shuffle(s.subs.map(x=>x.id)); s.idx=0; s.step='watch'; s.votes={} });
+      };
+    }
+  }
+  else if(L.step==='watch'){
+    stage = L.subs.find(s=>s.id===L.order[L.idx]);
+    $top.innerHTML = lTop(`Reel ${L.idx+1} von ${L.order.length} · alle zusammen anschauen`);
+    $ui.innerHTML = `<p class="muted small" style="text-align:center">Nicht verraten, von wem es ist.</p><button class="primary wide" id="tovote">Gesehen – jetzt tippen</button>`;
+    document.getElementById('tovote').onclick = () => setL(s=>{ s.step='vote'; s.turn=0; s.covered=true });
+  }
+  else if(L.step==='vote'){
+    const p=P[L.turn]; const subId=L.order[L.idx];
+    $top.innerHTML = lTop(`Reel ${L.idx+1} · Tipp ${L.turn+1} von ${P.length}`);
+    if(L.covered){
+      $ui.innerHTML = cover(p.name, 'Verdeckt tippen. Ist es dein eigenes Reel, tippe auf „Meins“.');
+      document.getElementById('iam').onclick = () => { ldraft={guess:null,stars:0}; setL(s=>{s.covered=false}) };
+    } else {
+      const g=ldraft.guess, st=ldraft.stars;
+      $ui.innerHTML = `
+      <div class="card">
+        <h2>${esc(p.name)}: Von wem ist das?</h2>
+        <div class="guess-grid">${P.map(q=>`<button aria-pressed="${g===q.id}" data-g="${q.id}">${q.id===p.id?'Meins':esc(q.name)}</button>`).join('')}</div>
+        <span class="label">Wie gut ist das Reel?</span>
+        <div class="stars" role="group" aria-label="Sterne">${[1,2,3,4,5].map(i=>`<button class="${i<=st?'on':''}" data-s="${i}" aria-label="${i} Sterne">★</button>`).join('')}</div>
+        <button class="primary wide" id="send" ${g&&st?'':'disabled'}>Abgeben und verdecken</button>
+      </div>`;
+      $ui.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{ ldraft.guess=b.dataset.g; render() });
+      $ui.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ ldraft.stars=+b.dataset.s; render() });
+      document.getElementById('send').onclick = () => {
+        const v={guess:ldraft.guess, stars:ldraft.stars}; ldraft={guess:null,stars:0};
+        setL(s=>{ (s.votes[subId] ||= {})[p.id]=v; if(s.turn<P.length-1){ s.turn++; s.covered=true } else s.step='reveal' });
+      };
+    }
+  }
+  else if(L.step==='reveal'){
+    const subId=L.order[L.idx]; const sub=L.subs.find(s=>s.id===subId);
+    const vs=Object.entries(L.votes[subId]||{}).filter(([pid])=>pid!==sub.owner);
+    const avg=vs.length? vs.reduce((a,[,v])=>a+v.stars,0)/vs.length : 0;
+    const last=L.idx>=L.order.length-1;
+    $top.innerHTML = lTop(`Reel ${L.idx+1} von ${L.order.length}`);
+    $ui.innerHTML = `
+    <div class="card pop">
+      <span class="label">Das Reel war von</span>
+      <p class="reveal">${esc(lname(sub.owner))}</p>
+      <p class="small muted">${fmt(avg)} von 5 Sternen im Schnitt</p>
+      <ul class="plain">${vs.map(([pid,v])=>`<li><span>${esc(lname(pid))} tippte ${v.guess===pid?'„Meins“':esc(lname(v.guess))}</span><span class="chip ${v.guess===sub.owner?'ok':'bad'}">${v.guess===sub.owner?'richtig':'falsch'}</span></li>`).join('')}</ul>
+    </div>
+    <button class="primary wide" id="next">${last?'Zum Ergebnis':'Nächstes Reel'}</button>`;
+    document.getElementById('next').onclick = () => setL(s=>{ if(last) s.step='end'; else { s.idx++; s.step='watch' } });
+  }
+  else if(L.step==='end'){
+    const ownerOf=id=>(L.subs.find(s=>s.id===id)||{}).owner;
+    const votes=[]; Object.entries(L.votes).forEach(([sid,m])=>Object.entries(m).forEach(([pid,v])=>{ if(pid!==ownerOf(sid)) votes.push({sid, voter:pid, guess:v.guess, stars:v.stars}) }));
+    const sb = scoreBoard(P, votes, L.order, ownerOf);
+    const bestSub = sb.best && L.subs.find(s=>s.id===sb.best.id);
+    $top.innerHTML = lTop('Ergebnis');
+    $ui.innerHTML = sb.html + bestReelCard(sb.best, bestSub, bestSub && lname(bestSub.owner)) + `
+    <button class="primary wide" id="again">Neue Runde, gleiche Leute</button>`;
+    document.getElementById('again').onclick = () => setL(s=>{ s.step='submit'; s.turn=0; s.covered=true; s.subs=[]; s.votes={}; s.order=[]; s.idx=0 });
+  }
+  setStage(stage || null);
+  bindQuit();
+}
+
+/* ================= Rendern ================= */
+function render(){
+  if(mode==='local') return renderLocal();
+  const focusId = document.activeElement && document.activeElement.id;
+  const keep = {}; ['nm','jc','url'].forEach(id=>{const el=document.getElementById(id); if(el) keep[id]=el.value});
+  if(code && !game){
+    setStage(null); $top.innerHTML='';
+    $ui.innerHTML = header(true) + (loadFailed
+      ? `<div class="card"><p>Das Spiel ${esc(code)} lädt nicht. Prüf dein Netz.</p><button class="ghost wide" id="leave">Zurück zum Start</button></div>`
+      : `<div class="card"><p>Lade Spiel ${esc(code)} …</p></div>`);
+    const l=document.getElementById('leave'); if(l) l.onclick=()=>leave();
+  }
+  else if(!code || !game) renderStart();
+  else if(game.phase==='submit') renderSubmit();
+  else if(game.phase==='play') renderPlay();
+  else renderEnd();
+  Object.entries(keep).forEach(([id,v])=>{const el=document.getElementById(id); if(el && v) el.value=v});
+  if(focusId){ const el=document.getElementById(focusId); if(el && el.tagName==='INPUT') el.focus() }
+}
+
+/* ================= Start ================= */
+online = (configured || EMU) ? 'wait' : 'unconfigured';
+render();
+if(online==='wait'){
+  try{
+    await initFirebase();
+    online='ready';
+    const saved = LS.get('wr_code');
+    const linkCode = (params.get('g')||'').toUpperCase();
+    if(saved && (!linkCode || linkCode===saved) && mode!=='local') enter(saved); else render();
+  }catch(e){
+    console.error(e); online='error'; if(mode!=='local') render();
+  }
+}
+</script>
+</body>
+</html>
